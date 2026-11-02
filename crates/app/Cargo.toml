@@ -1,0 +1,15 @@
+[package]
+name = "home-safe"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+home-safe-core.workspace = true
+home-safe-server.workspace = true
+anyhow.workspace = true
+futures.workspace = true
+gpui-kit.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

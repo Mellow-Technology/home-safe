@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font: 13px -apple-system, system-ui, sans-serif; width: 240px; margin: 12px; color: #1f2328; }
+  h1 { font-size: 14px; margin: 0 0 8px; }
+  .status { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #999; }
+  .ok .dot { background: #1a7f37; } .err .dot { background: #cf222e; }
+  label { display: block; color: #57606a; margin-bottom: 4px; }
+  input { width: 80px; }
+</style>
+</head>
+<body>
+  <h1>Home Safe</h1>
+  <div id="status" class="status"><span class="dot"></span><span id="status-text">Checking…</span></div>
+  <label for="port">App port</label>
+  <input id="port" type="number" min="1" max="65535">
+  <script src="popup.js"></script>
+</body>
+</html>
