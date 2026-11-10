@@ -4,6 +4,6 @@
   "type": "module",
   "scripts": {
     "test": "node --test test/",
-    "icons": "python3 scripts/make-icons.py"
+    "icons": "python3 ../scripts/make-icons.py"
   }
 }
