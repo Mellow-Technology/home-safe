@@ -22,6 +22,7 @@ Zillow page ──(content script: extract)──▶ extension background
 | `crates/app` | GPUI Kit desktop app; runs the API in-process |
 | `extension` | Manifest V3 WebExtension (Chrome and Firefox) |
 | `site` | The website, published to GitHub Pages |
+| `scripts` | Icon generator and the macOS app bundler |
 
 ## Running
 
@@ -75,7 +76,7 @@ The app and extension icons (a house with a heart inside) come from
 `crates/app/assets/icon.png` (the app sets it as its Dock icon at runtime),
 `crates/app/assets/logo.png` (the toolbar logo),
 `crates/app/assets/tray.png` (the menu bar icon, a template image macOS tints) and
-`crates/app/assets/AppIcon.icns` (used by `cargo bundle --release -p home-safe`).
+`crates/app/assets/AppIcon.icns` (the bundled app's icon).
 
 ## Tests
 
@@ -129,6 +130,33 @@ The schema is built to take on more data sources without migrations:
   Promote an attribute to a real column once you want to sort or filter on it.
 - `source` + `source_id` keep the data model open to listing sites other
   than Zillow.
+
+## Releases
+
+`scripts/bundle-macos.sh` builds `Home Safe.app` as a universal binary (Apple
+silicon and Intel; needs `rustup target add aarch64-apple-darwin
+x86_64-apple-darwin`) and writes a `.dmg`, a zipped app and a zipped
+extension to `target/release-macos/`. `ARCHS=aarch64 scripts/bundle-macos.sh`
+builds for just Apple silicon, which is quicker.
+
+To release, bump the version in `Cargo.toml` and `extension/manifest.json`,
+then push a matching tag:
+
+```bash
+git tag v0.2.0 && git push origin v0.2.0
+```
+
+The Release workflow checks the versions match, runs the tests, builds the
+bundle and publishes a GitHub release with it. Running the workflow by hand
+from the Actions tab builds the files (as a workflow artifact) without
+releasing.
+
+The app is ad-hoc signed, so the first time it's opened macOS says it can't
+check it for malware: open it from **System Settings → Privacy & Security →
+Open Anyway**. To sign and notarize instead, add these repository secrets:
+`MACOS_CERTIFICATE` (a base64-encoded Developer ID Application `.p12`),
+`MACOS_CERTIFICATE_PASSWORD`, and for notarizing `APPLE_ID`, `APPLE_TEAM_ID`
+and `APPLE_APP_PASSWORD` (an app-specific password).
 
 ## Website
 

@@ -20,9 +20,3 @@ objc2-app-kit = { version = "0.3", default-features = false, features = ["std", 
 objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSData"] }
 png = "0.18"
 tray-icon = "0.26"
-
-# `cargo bundle --release -p home-safe` (cargo install cargo-bundle) builds Home Safe.app.
-[package.metadata.bundle]
-name = "Home Safe"
-identifier = "com.mellow.HomeSafe"
-icon = ["assets/AppIcon.icns"]
