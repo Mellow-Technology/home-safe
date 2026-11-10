@@ -17,6 +17,7 @@ use tokio::sync::broadcast;
 pub struct Backend {
     runtime: Arc<Runtime>,
     pub store: Store,
+    pub images: ImageDownloader,
     pub events: broadcast::Sender<StoreEvent>,
     pub images_dir: PathBuf,
     pub port: u16,
@@ -37,14 +38,14 @@ impl Backend {
         let (events, _) = broadcast::channel(256);
         let port = home_safe_server::port_from_env();
 
-        let state = AppState { store: store.clone(), images, events: events.clone() };
+        let state = AppState { store: store.clone(), images: images.clone(), events: events.clone() };
         runtime.spawn(async move {
             if let Err(err) = home_safe_server::serve(state, port).await {
                 tracing::error!("API server stopped: {err:#}");
             }
         });
 
-        Ok(Self { runtime, store, events, images_dir: paths.images(), port })
+        Ok(Self { runtime, store, images, events, images_dir: paths.images(), port })
     }
 
     /// Runs `fut` on the tokio runtime; the returned future can be awaited

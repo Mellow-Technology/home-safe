@@ -41,6 +41,10 @@ Open any Zillow home page. The button sits in the bottom-right corner, and
 reads "Saved" for homes you've already saved. Clicking it again refreshes the
 saved data.
 
+To remove a saved home, click **Remove** next to the button on its Zillow
+page, or select it in the app and click the trash icon in the detail panel.
+Either way the home, its history, and its downloaded photos are deleted.
+
 ## Tests
 
 ```bash

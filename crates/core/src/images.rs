@@ -24,6 +24,23 @@ impl ImageDownloader {
         Ok(Self { client, images_dir, store })
     }
 
+    /// Deletes a home's downloaded images from disk.
+    pub async fn remove_for_home(&self, home_id: i64) -> Result<()> {
+        let dir = self.images_dir.join(home_id.to_string());
+        match tokio::fs::remove_dir_all(&dir).await {
+            Err(err) if err.kind() != std::io::ErrorKind::NotFound => {
+                Err(err).with_context(|| format!("removing {}", dir.display()))
+            }
+            _ => Ok(()),
+        }
+    }
+
+    /// Deletes a home with its images, both the database rows and the files.
+    pub async fn delete_home(&self, home_id: i64) -> Result<()> {
+        self.store.delete_home(home_id).await?;
+        self.remove_for_home(home_id).await
+    }
+
     /// Returns the number of images newly downloaded.
     pub async fn download_for_home(&self, home_id: i64) -> Result<usize> {
         let dir = self.images_dir.join(home_id.to_string());

@@ -195,7 +195,7 @@ async fn get_home(State(state): State<AppState>, Path(id): Path<i64>) -> ApiResu
 }
 
 async fn delete_home(State(state): State<AppState>, Path(id): Path<i64>) -> ApiResult<StatusCode> {
-    state.store.delete_home(id).await?;
+    state.images.delete_home(id).await?;
     let _ = state.events.send(StoreEvent::HomeDeleted(id));
     Ok(StatusCode::NO_CONTENT)
 }
@@ -222,11 +222,20 @@ mod tests {
     use axum::body::Body;
     use tower::ServiceExt;
 
-    async fn app() -> Router {
+    /// A router over an in-memory store whose images live in a fresh
+    /// directory, returned so tests can inspect it.
+    async fn app_with_images() -> (Router, std::path::PathBuf) {
+        static COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+        let n = COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let dir = std::env::temp_dir().join(format!("home-safe-test-{}-{n}", std::process::id()));
         let store = Store::open_in_memory().await.unwrap();
-        let images = ImageDownloader::new(store.clone(), std::env::temp_dir()).unwrap();
+        let images = ImageDownloader::new(store.clone(), dir.clone()).unwrap();
         let (events, _) = broadcast::channel(16);
-        router(AppState { store, images, events })
+        (router(AppState { store, images, events }), dir)
+    }
+
+    async fn app() -> Router {
+        app_with_images().await.0
     }
 
     fn post(origin: Option<&str>) -> Request {
@@ -264,5 +273,38 @@ mod tests {
         let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
         assert_eq!(json["saved"], true);
         assert_eq!(json["home"]["price"], 100);
+    }
+
+    #[tokio::test]
+    async fn delete_removes_home_and_photos() {
+        let (app, dir) = app_with_images().await;
+        let res = app.clone().oneshot(post(Some("chrome-extension://abc"))).await.unwrap();
+        let body = axum::body::to_bytes(res.into_body(), usize::MAX).await.unwrap();
+        let id = serde_json::from_slice::<serde_json::Value>(&body).unwrap()["id"].as_i64().unwrap();
+
+        let photos = dir.join(id.to_string());
+        std::fs::create_dir_all(&photos).unwrap();
+        std::fs::write(photos.join("000.jpg"), b"jpg").unwrap();
+
+        let delete = |origin: &str| {
+            Request::delete(format!("/api/homes/{id}"))
+                .header(header::ORIGIN, origin)
+                .body(Body::empty())
+                .unwrap()
+        };
+        let res = app.clone().oneshot(delete("https://evil.example")).await.unwrap();
+        assert_eq!(res.status(), StatusCode::FORBIDDEN);
+        assert!(photos.exists());
+
+        let res = app.clone().oneshot(delete("chrome-extension://abc")).await.unwrap();
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+        assert!(!photos.exists());
+
+        let res = app
+            .oneshot(Request::get(format!("/api/homes/{id}")).body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::NOT_FOUND);
+        std::fs::remove_dir_all(&dir).ok();
     }
 }

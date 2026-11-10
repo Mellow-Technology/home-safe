@@ -1,7 +1,9 @@
 use std::cmp::Ordering;
+use std::rc::Rc;
 
+use gpui_kit::component::menu::{PopupMenu, PopupMenuItem};
 use gpui_kit::component::table::{Column, ColumnSort, TableDelegate, TableState};
-use gpui_kit::component::{ActiveTheme as _, h_flex};
+use gpui_kit::component::{ActiveTheme as _, IconName, h_flex};
 use gpui_kit::*;
 use home_safe_core::Home;
 
@@ -125,11 +127,27 @@ pub struct HomesTable {
     rows: Vec<usize>,
     filter: String,
     sort: Option<(Col, ColumnSort)>,
+    on_delete: Option<RowAction>,
 }
+
+/// Handler for a row's context menu item, given the row's home.
+pub type RowAction = Rc<dyn Fn(Home, &mut Window, &mut App)>;
 
 impl HomesTable {
     pub fn new() -> Self {
-        Self { homes: Vec::new(), rows: Vec::new(), filter: String::new(), sort: None }
+        Self {
+            homes: Vec::new(),
+            rows: Vec::new(),
+            filter: String::new(),
+            sort: None,
+            on_delete: None,
+        }
+    }
+
+    /// Adds a "Delete" item to each row's context menu.
+    pub fn on_delete(mut self, handler: impl Fn(Home, &mut Window, &mut App) + 'static) -> Self {
+        self.on_delete = Some(Rc::new(handler));
+        self
     }
 
     pub fn set_homes(&mut self, homes: Vec<Home>) {
@@ -237,6 +255,24 @@ impl TableDelegate for HomesTable {
             };
         }
         div().truncate().child(col.text(home)).into_any_element()
+    }
+
+    fn context_menu(
+        &mut self,
+        row_ix: usize,
+        menu: PopupMenu,
+        _: &mut Window,
+        _: &mut Context<TableState<Self>>,
+    ) -> PopupMenu {
+        let (Some(home), Some(on_delete)) = (self.home(row_ix).cloned(), self.on_delete.clone())
+        else {
+            return menu;
+        };
+        menu.item(
+            PopupMenuItem::new("Delete…")
+                .icon(IconName::Delete)
+                .on_click(move |_, window, cx| on_delete(home.clone(), window, cx)),
+        )
     }
 
     fn cell_label(&self, row_ix: usize, col_ix: usize, _: &App) -> Option<SharedString> {

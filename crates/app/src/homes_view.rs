@@ -29,7 +29,11 @@ struct Selected {
 
 impl HomesView {
     pub fn new(backend: Backend, window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let table = cx.new(|cx| TableState::new(HomesTable::new(), window, cx));
+        let this = cx.weak_entity();
+        let delegate = HomesTable::new().on_delete(move |home, window, cx| {
+            this.update(cx, |this, cx| this.delete_home(home, window, cx)).ok();
+        });
+        let table = cx.new(|cx| TableState::new(delegate, window, cx));
         let search = cx.new(|cx| InputState::new(window, cx).placeholder("Search address, city, type…"));
 
         let subscriptions = vec![
@@ -168,31 +172,34 @@ impl HomesView {
         .detach();
     }
 
-    fn delete_selected(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        let Some(home) = self.selected.as_ref().map(|s| s.home.clone()) else { return };
+    fn delete_home(&mut self, home: Home, window: &mut Window, cx: &mut Context<Self>) {
         let answer = window.prompt(
             PromptLevel::Warning,
             &format!("Delete {}?", home.full_address()),
-            Some("This removes the home and its saved data from Home Safe. Downloaded photos stay on disk."),
+            Some("This removes the home, its saved data and its downloaded photos from Home Safe."),
             &["Delete", "Cancel"],
             cx,
         );
-        let store = self.backend.store.clone();
+        let images = self.backend.images.clone();
         let events = self.backend.events.clone();
         let backend = self.backend.clone();
-        cx.spawn(async move |_, _| {
+        cx.spawn(async move |this, cx| {
             if answer.await.ok() != Some(0) {
                 return;
             }
             let result = backend
                 .run(async move {
-                    store.delete_home(home.id).await?;
+                    images.delete_home(home.id).await?;
                     let _ = events.send(StoreEvent::HomeDeleted(home.id));
                     Ok(())
                 })
                 .await;
             if let Err(err) = result {
-                tracing::error!("delete failed: {err:#}");
+                this.update(cx, |this, cx| {
+                    this.error = Some(format!("Failed to delete home: {err:#}").into());
+                    cx.notify();
+                })
+                .ok();
             }
         })
         .detach();
@@ -332,7 +339,11 @@ impl HomesView {
                             .ghost()
                             .icon(IconName::Delete)
                             .tooltip("Delete from Home Safe")
-                            .on_click(cx.listener(|this, _, window, cx| this.delete_selected(window, cx))),
+                            .on_click(cx.listener(|this, _, window, cx| {
+                                if let Some(home) = this.selected.as_ref().map(|s| s.home.clone()) {
+                                    this.delete_home(home, window, cx);
+                                }
+                            })),
                     ),
             )
             .child(facts)
@@ -362,6 +373,7 @@ impl HomesView {
                 this.child(div().text_sm().line_height(rems(1.4)).child(description))
             })
     }
+
 }
 
 impl Render for HomesView {

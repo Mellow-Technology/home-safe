@@ -25,6 +25,7 @@ const handlers = {
   lookup: ({ source, sourceId }) =>
     api(`/homes/lookup?source=${encodeURIComponent(source)}&sourceId=${encodeURIComponent(sourceId)}`),
   save: ({ capture }) => api("/homes", { method: "POST", body: JSON.stringify(capture) }),
+  remove: ({ id }) => api(`/homes/${encodeURIComponent(id)}`, { method: "DELETE" }),
 };
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
