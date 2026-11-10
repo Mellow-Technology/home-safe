@@ -28,6 +28,18 @@ Zillow page ──(content script: extract)──▶ extension background
 cargo run -p home-safe
 ```
 
+On macOS, Home Safe also puts a house icon in the menu bar. Closing the window
+(or ⌘W) leaves the app running there, without a Dock icon, so the extension can
+keep saving homes. Reopen the window from the menu bar icon (or, for the bundled
+app, by opening Home Safe again); quit from the icon's menu, or with ⌘Q while
+the window is open.
+
+Turn on **Start at Login** (in the menu bar icon's menu or the Home Safe menu)
+to have it start in the menu bar, without opening the window, whenever you log
+in. It adds a LaunchAgent at `~/Library/LaunchAgents/com.mellow.HomeSafe.plist`
+that runs the copy of the app you turned it on from, so turn it on from the
+bundled app rather than a `cargo run` build.
+
 Data lives in `~/Library/Application Support/com.mellow.HomeSafe` (set
 `HOME_SAFE_DATA_DIR` to override). The API listens on `127.0.0.1:47321`
 (`HOME_SAFE_PORT` to override; set the same port in the extension popup).
@@ -60,7 +72,8 @@ The app and extension icons (a house with a heart inside) come from
 `scripts/make-icons.py`, which has no dependencies. Run
 `python3 scripts/make-icons.py` to regenerate `extension/icons/*.png`,
 `crates/app/assets/icon.png` (the app sets it as its Dock icon at runtime),
-`crates/app/assets/logo.png` (the toolbar logo) and
+`crates/app/assets/logo.png` (the toolbar logo),
+`crates/app/assets/tray.png` (the menu bar icon, a template image macOS tints) and
 `crates/app/assets/AppIcon.icns` (used by `cargo bundle --release -p home-safe`).
 
 ## Tests

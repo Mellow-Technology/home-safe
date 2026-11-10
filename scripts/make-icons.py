@@ -4,6 +4,7 @@ No third-party deps. Writes:
   extension/icons/icon{16,48,128}.png   browser extension (full-bleed tile)
   crates/app/assets/icon.png            1024px macOS app icon (Dock, set at runtime)
   crates/app/assets/logo.png            48px toolbar logo (no macOS margins)
+  crates/app/assets/tray.png            36px menu bar icon (black template: house, heart cut out)
   crates/app/assets/AppIcon.icns        bundle icon (macOS only; needs `iconutil`)
 
 Run: python3 scripts/make-icons.py
@@ -42,20 +43,33 @@ def shade(s, t):
     return tuple(round(a + (b - a) * k) for a, b in zip(TEAL_TOP, TEAL_BOTTOM))
 
 
-def sample(u, v, margin):
+def tray_shade(s, t):
+    """Menu bar template: the house alone in black, with the heart cut out.
+    macOS uses only the alpha and tints it to match the menu bar."""
+    # Zoom in on the house (which spans about 0.15-0.85 of the tile).
+    s, t = 0.14 + s * 0.72, 0.13 + t * 0.72
+    roof = 0.18 <= t <= 0.47 and abs(s - 0.5) <= (t - 0.18) * 1.2
+    body = 0.45 <= t <= 0.8 and 0.27 <= s <= 0.73
+    chimney = 0.24 <= t <= 0.4 and 0.63 <= s <= 0.7
+    if (roof or body or chimney) and not heart(s, t):
+        return (0, 0, 0)
+    return None
+
+
+def sample(u, v, margin, shader=shade):
     s, t = (u - margin) / (1 - 2 * margin), (v - margin) / (1 - 2 * margin)
     if not (0 <= s <= 1 and 0 <= t <= 1):
         return None
-    return shade(s, t)
+    return shader(s, t)
 
 
-def render(size, margin=0.0, ss=4):
+def render(size, margin=0.0, ss=4, shader=shade):
     rows = []
     for y in range(size):
         row = bytearray([0])
         for x in range(size):
             # Only supersample pixels whose corners disagree (edges).
-            probe = {sample((x + dx) / size, (y + dy) / size, margin)
+            probe = {sample((x + dx) / size, (y + dy) / size, margin, shader)
                      for dx, dy in ((0, 0), (1, 0), (0, 1), (1, 1), (.5, .5))}
             if len(probe) == 1:
                 c = probe.pop()
@@ -64,7 +78,7 @@ def render(size, margin=0.0, ss=4):
             acc = [0, 0, 0, 0]
             for j in range(ss):
                 for i in range(ss):
-                    c = sample((x + (i + .5) / ss) / size, (y + (j + .5) / ss) / size, margin)
+                    c = sample((x + (i + .5) / ss) / size, (y + (j + .5) / ss) / size, margin, shader)
                     if c is not None:
                         acc[0] += c[0]; acc[1] += c[1]; acc[2] += c[2]; acc[3] += 1
             n = acc[3]
@@ -96,6 +110,8 @@ assets.mkdir(exist_ok=True)
 (assets / "icon.png").write_bytes(render(1024, MAC_MARGIN))
 # Full-bleed logo for the app's toolbar (shown at 24pt, so 2x for Retina).
 (assets / "logo.png").write_bytes(render(48))
+# Menu bar icon: 18pt tall, so 2x for Retina.
+(assets / "tray.png").write_bytes(render(36, shader=tray_shade))
 
 if shutil.which("iconutil"):
     with tempfile.TemporaryDirectory() as tmp:
