@@ -5,7 +5,7 @@ use std::borrow::Cow;
 
 use gpui_kit::{AssetSource, Result, SharedString};
 
-gpui_kit::assets::icon_assets!(ExtraIcons, [House, LayoutGrid, Table]);
+gpui_kit::assets::icon_assets!(ExtraIcons, [House, LayoutGrid, Table, Trash]);
 
 pub struct AppAssets;
 

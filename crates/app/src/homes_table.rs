@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use gpui_kit::component::menu::{PopupMenu, PopupMenuItem};
 use gpui_kit::component::table::{Column, ColumnSort, TableDelegate, TableState};
-use gpui_kit::component::{ActiveTheme as _, IconName, h_flex};
+use gpui_kit::component::{ActiveTheme as _, h_flex};
 use gpui_kit::*;
 use home_safe_core::Home;
 
@@ -284,7 +284,7 @@ impl TableDelegate for HomesTable {
         };
         menu.item(
             PopupMenuItem::new("Delete…")
-                .icon(IconName::Delete)
+                .icon(gpui_kit::assets::IconName::Trash)
                 .on_click(move |_, window, cx| on_delete(home.clone(), window, cx)),
         )
     }
