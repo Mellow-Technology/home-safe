@@ -3,6 +3,7 @@
 No third-party deps. Writes:
   extension/icons/icon{16,48,128}.png   browser extension (full-bleed tile)
   crates/app/assets/icon.png            1024px macOS app icon (Dock, set at runtime)
+  crates/app/assets/logo.png            48px toolbar logo (no macOS margins)
   crates/app/assets/AppIcon.icns        bundle icon (macOS only; needs `iconutil`)
 
 Run: python3 scripts/make-icons.py
@@ -93,6 +94,8 @@ for s in (16, 48, 128):
 assets = ROOT / "crates" / "app" / "assets"
 assets.mkdir(exist_ok=True)
 (assets / "icon.png").write_bytes(render(1024, MAC_MARGIN))
+# Full-bleed logo for the app's toolbar (shown at 24pt, so 2x for Retina).
+(assets / "logo.png").write_bytes(render(48))
 
 if shutil.which("iconutil"):
     with tempfile.TemporaryDirectory() as tmp:
