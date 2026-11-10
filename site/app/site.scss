@@ -1,0 +1,43 @@
+// Site-wide touches on top of the theme (theme.scss).
+
+:root {
+  scroll-behavior: smooth;
+  // Anchored sections land below the sticky header.
+  scroll-padding-top: calc(var(--gm-header-height) + var(--gm-space-4));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    scroll-behavior: auto;
+  }
+}
+
+// A warm glow, as if from a window at dusk: rose up top, a little teal and
+// candlelight lower down.
+body {
+  min-height: 100dvh;
+  background:
+    radial-gradient(60rem 40rem at 50% -12%, color-mix(in srgb, var(--gm-color-primary) 13%, transparent), transparent 70%),
+    radial-gradient(42rem 32rem at 100% 40%, color-mix(in srgb, var(--gm-color-accent) 8%, transparent), transparent 70%),
+    radial-gradient(48rem 34rem at 0% 85%, color-mix(in srgb, #e8a85c 10%, transparent), transparent 70%),
+    var(--gm-color-bg);
+}
+
+// Fraunces with its soft, rounded serifs.
+h1,
+h2,
+h3 {
+  font-variation-settings: "SOFT" 100;
+}
+
+// Zero specificity, so component classes can set their own spacing.
+:where(ul[class], ol[class]) {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+// "The heart" in the hero's title: heart red rather than the accent teal.
+#top h1 em {
+  color: var(--gm-color-primary);
+}

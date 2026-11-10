@@ -1,0 +1,113 @@
+// Home Safe's theme: home is where the heart is. Warm linen and a rose
+// "heart" red by day, with the teal of the app icon as the accent; an
+// evening by the fire at night. Soft serif headings, rounded corners, and
+// little hearts and houses where the default theme has a grid.
+//
+// Loaded instead of "gui-mellow/styles.scss", merged over gui-mellow's
+// default theme.
+
+@use "gui-mellow/styles/patterns";
+
+// Hearts and houses, drawn in black: the pattern is a mask painted in
+// --gm-pattern-color.
+$-heart: "<path d='M0 4.5C-4.5 1.2-6 -1.5-4.4 -3.4-3 -5 -1 -4.6 0 -2.6 1 -4.6 3 -5 4.4 -3.4 6 -1.5 4.5 1.2 0 4.5Z'/>";
+$-house: "<path d='M-7 0L0 -6.5 7 0M-5 -1.5V6H5V-1.5'/><path d='M-1.2 6V2.4H1.2V6'/>";
+$-hearth: patterns.svg-url(
+  "<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'>" +
+    "<g fill='none' stroke='black' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'>" +
+    "<g transform='translate(22 26) rotate(-12)'>#{$-heart}</g>" +
+    "<g transform='translate(84 70)'>#{$-house}</g>" +
+    "<g transform='translate(38 96) rotate(14) scale(.7)'>#{$-heart}</g>" +
+    "<g transform='translate(96 18) rotate(8) scale(.6)'>#{$-heart}</g>" +
+    "</g></svg>"
+);
+
+@use "gui-mellow/styles/global" with (
+  $light: (
+    "color-bg": #fbf6ef,
+    "color-surface": #fffdf9,
+    "color-surface-hover": #f6ede2,
+    "color-surface-sunken": rgba(122, 74, 52, 0.06),
+    "color-overlay": rgba(251, 246, 239, 0.86),
+
+    "color-heading": #3b2420,
+    "color-text": #4a3530,
+    "color-text-muted": #6c5550,
+    "color-text-subtle": #7a635d,
+    "color-text-faint": #87716a,
+
+    "color-primary": #c73a52,
+    "color-primary-hover": #a92f45,
+    "color-on-primary": #fffdf9,
+    "color-accent": #0f766e,
+    "color-on-accent": #fffdf9,
+    "color-link": #0f6b64,
+    "color-link-hover": #0b514c,
+    "color-focus": #0f6b64,
+    "color-selection": rgba(244, 63, 94, 0.2),
+
+    "color-success": #2f7d4f,
+    "color-warning": #9a5b00,
+    "color-danger": #b42318,
+
+    "color-border-subtle": rgba(74, 53, 48, 0.07),
+    "color-border": rgba(74, 53, 48, 0.12),
+    "color-border-strong": rgba(74, 53, 48, 0.22),
+    "color-border-hover": rgba(74, 53, 48, 0.34),
+
+    "shadow-sm": 0 1px 2px rgba(92, 48, 32, 0.08),
+    "shadow-lg": 0 20px 44px -16px rgba(92, 48, 32, 0.22),
+    "glass-highlight": rgba(255, 253, 249, 0.8),
+    "pattern-color": rgba(199, 58, 82, 0.08),
+    "particle-colors": #{"199 58 82, 244 114 134, 15 118 110, 232 168 92, 250 214 170"},
+  ),
+  $dark: (
+    "color-bg": #1c1412,
+    "color-surface": rgba(255, 226, 210, 0.035),
+    "color-surface-hover": rgba(255, 226, 210, 0.06),
+    "color-surface-sunken": rgba(255, 226, 210, 0.07),
+    "color-overlay": rgba(28, 20, 18, 0.86),
+
+    "color-heading": #fbefe7,
+    "color-text": #eddcd3,
+    "color-text-muted": #c9b4ab,
+    "color-text-subtle": #b29d94,
+    "color-text-faint": #98847c,
+
+    "color-primary": #ff7d90,
+    "color-primary-hover": #ff9aa9,
+    "color-on-primary": #2a1215,
+    "color-accent": #4fd1c0,
+    "color-on-accent": #0e1f1d,
+    "color-link": #72dccd,
+    "color-link-hover": #a0e9df,
+    "color-focus": #72dccd,
+    "color-selection": rgba(255, 125, 144, 0.28),
+
+    "color-success": #6fd394,
+    "color-warning": #f2b544,
+    "color-danger": #ff7b6b,
+
+    "color-border-subtle": rgba(255, 226, 210, 0.07),
+    "color-border": rgba(255, 226, 210, 0.1),
+    "color-border-strong": rgba(255, 226, 210, 0.18),
+    "color-border-hover": rgba(255, 226, 210, 0.28),
+
+    "shadow-sm": 0 1px 2px rgba(0, 0, 0, 0.35),
+    "shadow-lg": 0 20px 44px -16px rgba(0, 0, 0, 0.6),
+    "glass-highlight": rgba(251, 239, 231, 0.12),
+    "pattern-color": rgba(255, 125, 144, 0.08),
+    "particle-colors": #{"255 125 144, 255 170 150, 79 209 192, 242 181 68, 251 239 231"},
+  ),
+  $tokens: (
+    "font-display": (var(--font-display, "Fraunces"), Georgia, serif),
+    "font-body": (var(--font-body, "Nunito"), ui-sans-serif, system-ui, sans-serif),
+    "tracking-tight": -0.012em,
+    "radius-sm": 10px,
+    "radius-md": 16px,
+    "radius-lg": 24px,
+    "container": 1120px,
+    "pattern": $-hearth,
+    "pattern-size": 120px 120px,
+  )
+);

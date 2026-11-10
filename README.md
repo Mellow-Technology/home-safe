@@ -21,6 +21,7 @@ Zillow page ──(content script: extract)──▶ extension background
 | `crates/server` | axum REST API (+ `home-safe-server` headless binary) |
 | `crates/app` | GPUI Kit desktop app; runs the API in-process |
 | `extension` | Manifest V3 WebExtension (Chrome and Firefox) |
+| `site` | The website, published to GitHub Pages |
 
 ## Running
 
@@ -128,6 +129,21 @@ The schema is built to take on more data sources without migrations:
   Promote an attribute to a real column once you want to sort or filter on it.
 - `source` + `source_id` keep the data model open to listing sites other
   than Zillow.
+
+## Website
+
+`site/` is the project's website: a Next.js static export built with
+[gui-mellow](https://github.com/Mellow-Technology/gui-mellow) and its own warm
+theme (`site/app/theme.scss`). `.github/workflows/pages.yml` publishes it to
+GitHub Pages on every push to `main` that changes it; in the repository's
+settings, under Pages, set the source to "GitHub Actions".
+
+```bash
+cd site
+bun install
+bun dev        # http://localhost:3002
+bun run build  # static site in site/out
+```
 
 ## License
 
