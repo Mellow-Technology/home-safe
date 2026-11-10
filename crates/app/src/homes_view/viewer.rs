@@ -99,6 +99,10 @@ impl HomesView {
                                 .id(("viewer-photo", ix))
                                 .w(px(w))
                                 .h(px(h))
+                                // Without this, img takes the photo's own aspect ratio,
+                                // which wins over the height above and can push the
+                                // photo past the bottom of a short window.
+                                .aspect_ratio(w / h)
                                 .object_fit(ObjectFit::Contain),
                         )),
                     )
