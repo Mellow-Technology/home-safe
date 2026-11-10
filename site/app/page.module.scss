@@ -39,6 +39,32 @@
   }
 }
 
+// ---- Get started ---------------------------------------------------------------
+
+.download {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gm-space-4);
+
+  // Downloads before the steps that use them, once the columns stack.
+  @include gm.below(md) {
+    order: -1;
+  }
+}
+
+.downloadActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gm-space-3);
+  margin-top: var(--gm-space-4);
+}
+
+.fromSource {
+  margin: var(--gm-space-3) 0 0;
+  color: var(--gm-color-text-muted);
+  font-size: var(--gm-text-sm);
+}
+
 // ---- Privacy -------------------------------------------------------------------
 
 .flow {

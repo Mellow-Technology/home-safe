@@ -1,4 +1,5 @@
 import { Button } from "gui-mellow/Button";
+import { Card } from "gui-mellow/Card";
 import { Credit } from "gui-mellow/Credit";
 import { CtaBanner } from "gui-mellow/CtaBanner";
 import { Feature, FeatureGrid } from "gui-mellow/FeatureGrid";
@@ -15,6 +16,10 @@ import { SavePreview } from "@/components/SavePreview";
 import styles from "./page.module.scss";
 
 const REPO = "https://github.com/Mellow-Technology/home-safe";
+const RELEASES = `${REPO}/releases`;
+// The release files carry no version, so these always fetch the newest.
+const DOWNLOAD_APP = `${RELEASES}/latest/download/Home-Safe-macos.dmg`;
+const DOWNLOAD_EXTENSION = `${RELEASES}/latest/download/Home-Safe-extension.zip`;
 
 /** An eyebrow in the body face. */
 function Kicker({ children }: { children: React.ReactNode }) {
@@ -178,43 +183,76 @@ export default function Home() {
           size="wide"
           eyebrow={<Kicker>Get started</Kicker>}
           title="Make yourself at home"
-          description="Home Safe is built with Rust and runs best on macOS. For now you build it from source; it takes a few minutes."
+          description="Home Safe is free for Macs with macOS 12 or later, Apple silicon or Intel. Setting it up takes a couple of minutes."
         >
           <div className={styles.split}>
             <Steps
               steps={[
                 {
-                  title: "Install Rust",
+                  title: "Download and install",
                   body: (
                     <>
-                      From <a href="https://rustup.rs">rustup.rs</a>, if you don&apos;t have it yet.
+                      Open <code>Home-Safe-macos.dmg</code> and drag Home Safe into your Applications folder.
                     </>
                   ),
                 },
                 {
-                  title: "Build and open the app",
-                  body: "Clone the repository and run it. Your homes are kept in your user's Application Support folder.",
-                },
-                {
-                  title: "Load the extension",
+                  title: "Open it the first time",
                   body: (
                     <>
-                      In Chrome, open <code>chrome://extensions</code>, turn on Developer mode and load the{" "}
-                      <code>extension</code> folder. In Firefox, load <code>extension/manifest.json</code> from{" "}
-                      <code>about:debugging</code>.
+                      Home Safe isn&apos;t notarized by Apple yet, so the first time you open it macOS says it can&apos;t
+                      check it for malware. Click <strong>Done</strong>, then go to{" "}
+                      <strong>System Settings → Privacy &amp; Security</strong>, scroll down and click{" "}
+                      <strong>Open Anyway</strong> beside Home Safe. You only need to do this once; after that it opens
+                      like any other app, and its house appears in your menu bar.
+                    </>
+                  ),
+                },
+                {
+                  title: "Add the extension",
+                  body: (
+                    <>
+                      Unzip <code>Home-Safe-extension.zip</code>. In Chrome, open <code>chrome://extensions</code>, turn
+                      on Developer mode, click <strong>Load unpacked</strong> and choose the folder. In Firefox, open{" "}
+                      <code>about:debugging</code>, choose <strong>This Firefox</strong> and load its{" "}
+                      <code>manifest.json</code>. Store versions are on the way.
                     </>
                   ),
                 },
               ]}
             />
-            <Terminal
-              label="Terminal"
-              lines={[
-                "git clone https://github.com/Mellow-Technology/home-safe",
-                "cd home-safe",
-                "cargo run --release -p home-safe",
-              ]}
-            />
+            <div className={styles.download}>
+              <Card
+                icon={<Logo size={40} />}
+                title="Home Safe for Mac"
+                footer={
+                  <>
+                    <a href={RELEASES}>Release notes and older versions</a>
+                  </>
+                }
+              >
+                <p>The app, ready to drag into Applications, and the extension for Chrome and Firefox.</p>
+                <div className={styles.downloadActions}>
+                  <Button href={DOWNLOAD_APP} icon={<Heart size={16} />}>
+                    Download for Mac
+                  </Button>
+                  <Button href={DOWNLOAD_EXTENSION} variant="secondary">
+                    Get the extension
+                  </Button>
+                </div>
+              </Card>
+              <p className={styles.fromSource}>
+                Rather build it yourself? With <a href="https://rustup.rs">Rust</a> installed:
+              </p>
+              <Terminal
+                label="Terminal"
+                lines={[
+                  "git clone https://github.com/Mellow-Technology/home-safe",
+                  "cd home-safe",
+                  "cargo run --release -p home-safe",
+                ]}
+              />
+            </div>
           </div>
         </Section>
 
@@ -223,11 +261,11 @@ export default function Home() {
             title="Find the one, and keep the ones you loved along the way"
             actions={
               <>
-                <Button href={REPO} icon={<GitHubIcon />}>
-                  Get Home Safe
+                <Button href={DOWNLOAD_APP} icon={<Heart size={16} />}>
+                  Download for Mac
                 </Button>
-                <Button href={`${REPO}#readme`} variant="secondary">
-                  Read the docs
+                <Button href={REPO} variant="secondary" icon={<GitHubIcon />}>
+                  View on GitHub
                 </Button>
               </>
             }
@@ -244,6 +282,7 @@ export default function Home() {
             heading: "Project",
             links: [
               { href: REPO, label: "Source code" },
+              { href: RELEASES, label: "Releases" },
               { href: `${REPO}/issues`, label: "Issues" },
               { href: `${REPO}/blob/main/COPYING.LESSER`, label: "License" },
             ],
@@ -251,6 +290,7 @@ export default function Home() {
           {
             heading: "Get started",
             links: [
+              { href: DOWNLOAD_APP, label: "Download for Mac" },
               { href: "#get-started", label: "Install" },
               { href: "#how", label: "How it works" },
               { href: "#private", label: "Privacy" },

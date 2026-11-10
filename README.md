@@ -26,6 +26,10 @@ Zillow page ──(content script: extract)──▶ extension background
 
 ## Running
 
+Download `Home-Safe-macos.dmg` and `Home-Safe-extension.zip` from the
+[latest release](https://github.com/Mellow-Technology/home-safe/releases/latest),
+or run it from source:
+
 ```bash
 cargo run -p home-safe
 ```
