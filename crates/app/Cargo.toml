@@ -13,3 +13,14 @@ gpui-kit.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSApplication", "NSImage", "NSResponder"] }
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSData"] }
+
+# `cargo bundle --release -p home-safe` (cargo install cargo-bundle) builds Home Safe.app.
+[package.metadata.bundle]
+name = "Home Safe"
+identifier = "com.mellow.HomeSafe"
+icon = ["assets/AppIcon.icns"]

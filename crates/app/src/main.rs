@@ -25,6 +25,7 @@ fn main() -> anyhow::Result<()> {
 
     gpui_kit::application().run(move |cx| {
         gpui_kit::init(cx);
+        set_dock_icon();
         cx.on_action(|_: &Quit, cx| cx.quit());
         cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
         cx.set_menus(vec![Menu {
@@ -53,3 +54,23 @@ fn main() -> anyhow::Result<()> {
     });
     Ok(())
 }
+
+/// Sets the Dock icon at runtime so it also shows for unbundled `cargo run`
+/// builds; bundled builds get it from `AppIcon.icns` as well.
+#[cfg(target_os = "macos")]
+fn set_dock_icon() {
+    use objc2::{AnyThread, MainThreadMarker};
+    use objc2_app_kit::{NSApplication, NSImage};
+    use objc2_foundation::NSData;
+
+    static ICON: &[u8] = include_bytes!("../assets/icon.png");
+    let Some(mtm) = MainThreadMarker::new() else { return };
+    let data = NSData::with_bytes(ICON);
+    if let Some(image) = NSImage::initWithData(NSImage::alloc(), &data) {
+        // SAFETY: on the main thread with a valid, non-nil image.
+        unsafe { NSApplication::sharedApplication(mtm).setApplicationIconImage(Some(&image)) };
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn set_dock_icon() {}

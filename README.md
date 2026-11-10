@@ -45,6 +45,14 @@ To remove a saved home, click **Remove** next to the button on its Zillow
 page, or select it in the app and click the trash icon in the detail panel.
 Either way the home, its history, and its downloaded photos are deleted.
 
+## Icons
+
+The app and extension icons (a house with a heart inside) come from
+`scripts/make-icons.py`, which has no dependencies. Run
+`python3 scripts/make-icons.py` to regenerate `extension/icons/*.png`,
+`crates/app/assets/icon.png` (the app sets it as its Dock icon at runtime) and
+`crates/app/assets/AppIcon.icns` (used by `cargo bundle --release -p home-safe`).
+
 ## Tests
 
 ```bash
