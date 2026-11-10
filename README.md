@@ -115,3 +115,9 @@ The schema is built to take on more data sources without migrations:
   Promote an attribute to a real column once you want to sort or filter on it.
 - `source` + `source_id` keep the data model open to listing sites other
   than Zillow.
+
+## License
+
+Home Safe is licensed under the GNU Lesser General Public License, version 3
+only (`LGPL-3.0-only`). See [COPYING.LESSER](COPYING.LESSER) for the LGPL and
+[COPYING](COPYING) for the GNU GPL it builds on.

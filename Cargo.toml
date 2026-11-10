@@ -5,7 +5,7 @@ members = ["crates/core", "crates/server", "crates/app"]
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
-license = "MIT"
+license = "LGPL-3.0-only"
 
 [workspace.dependencies]
 home-safe-core = { path = "crates/core" }

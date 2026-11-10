@@ -1,6 +1,7 @@
 {
   "name": "home-safe-extension",
   "private": true,
+  "license": "LGPL-3.0-only",
   "type": "module",
   "scripts": {
     "test": "node --test test/",
