@@ -42,8 +42,17 @@ reads "Saved" for homes you've already saved. Clicking it again refreshes the
 saved data.
 
 To remove a saved home, click **Remove** next to the button on its Zillow
-page, or select it in the app and click the trash icon in the detail panel.
+page, or open it in the app and click the trash icon on its page.
 Either way the home, its history, and its downloaded photos are deleted.
+
+## Using the app
+
+Homes show as cards (the default) or a sortable table; switch with the buttons
+at the right of the toolbar. The status bar shows how many homes match the
+search and the API address the extension talks to. Click a card, or double-click a table row, to open the
+home's page; **All homes** or Esc goes back. Click any photo to browse them
+full size: ← and → step through them (wrapping around at the ends), and Esc
+or a click outside the photo closes the viewer.
 
 ## Icons
 

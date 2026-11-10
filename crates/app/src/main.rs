@@ -1,4 +1,4 @@
-//! Home Safe desktop app: a table of saved homes, plus the local API the
+//! Home Safe desktop app: saved homes as cards or a table, plus the local API the
 //! browser extension saves listings through.
 
 mod assets;
@@ -32,6 +32,7 @@ fn main() -> anyhow::Result<()> {
             set_dock_icon();
             cx.on_action(|_: &Quit, cx| cx.quit());
             cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
+            homes_view::bind_keys(cx);
             cx.set_menus(vec![Menu {
                 name: "Home Safe".into(),
                 items: vec![MenuItem::action("Quit Home Safe", Quit)],
