@@ -13,7 +13,7 @@ use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, put};
 use axum::{Json, Router};
-use home_safe_core::images::ImageDownloader;
+use home_safe_core::images::{DownloadProgress, ImageDownloader};
 use home_safe_core::{Attribute, Home, HomeCapture, HomeImage, Store};
 use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast;
@@ -48,6 +48,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/homes", get(list_homes).post(save_home))
         .route("/api/homes/lookup", get(lookup_home))
         .route("/api/homes/{id}", get(get_home).delete(delete_home))
+        .route("/api/homes/{id}/photos/progress", get(photo_progress))
         .route("/api/homes/{id}/attributes", put(put_attributes))
         .layer(DefaultBodyLimit::max(32 * 1024 * 1024))
         .layer(middleware::from_fn(reject_web_origins))
@@ -157,24 +158,30 @@ async fn save_home(
     let id = state.store.save_capture(&capture).await?;
     let _ = state.events.send(StoreEvent::HomeSaved(id));
 
-    // Download in the background so the extension gets an answer right away.
-    let bg = state.clone();
-    tokio::spawn(async move {
-        match bg.images.download_for_home(id).await {
-            Ok(0) => {}
-            Ok(n) => {
-                tracing::info!(home = id, "downloaded {n} images");
-                let _ = bg.events.send(StoreEvent::ImagesUpdated(id));
-            }
-            Err(err) => tracing::warn!(home = id, "image download failed: {err:#}"),
-        }
-    });
+    // Download in the background so the extension gets an answer right away;
+    // it follows along via /photos/progress. Claiming first means progress
+    // reads as running as soon as this response is sent.
+    if state.images.claim(id) {
+        let bg = state.clone();
+        tokio::spawn(async move { download_photos(bg, id).await });
+    }
 
     let status = if existed { StatusCode::OK } else { StatusCode::CREATED };
     Ok((
         status,
         Json(SaveResponse { id, created: !existed, image_count: capture.images.len() }),
     ))
+}
+
+async fn download_photos(state: AppState, id: i64) {
+    match state.images.run_claimed(id).await {
+        Ok(0) => {}
+        Ok(n) => {
+            tracing::info!(home = id, "downloaded {n} images");
+            let _ = state.events.send(StoreEvent::ImagesUpdated(id));
+        }
+        Err(err) => tracing::warn!(home = id, "image download failed: {err:#}"),
+    }
 }
 
 #[derive(Serialize)]
@@ -192,6 +199,23 @@ async fn get_home(State(state): State<AppState>, Path(id): Path<i64>) -> ApiResu
     let images = state.store.images(id).await?;
     let attributes = state.store.attributes(id).await?;
     Ok(Json(HomeDetail { home, images, attributes }).into_response())
+}
+
+/// Photo download progress for a home. Without a download since the app
+/// started, reports what's on disk as finished.
+async fn photo_progress(State(state): State<AppState>, Path(id): Path<i64>) -> ApiResult<Response> {
+    if let Some(progress) = state.images.progress(id) {
+        return Ok(Json(progress).into_response());
+    }
+    if state.store.get_home(id).await?.is_none() {
+        return Ok(StatusCode::NOT_FOUND.into_response());
+    }
+    let images = state.store.images(id).await?;
+    let downloaded = images
+        .iter()
+        .filter(|i| i.local_path.as_deref().is_some_and(|p| std::path::Path::new(p).exists()))
+        .count();
+    Ok(Json(DownloadProgress { total: images.len(), downloaded, failed: 0, done: true }).into_response())
 }
 
 async fn delete_home(State(state): State<AppState>, Path(id): Path<i64>) -> ApiResult<StatusCode> {
@@ -302,6 +326,60 @@ mod tests {
 
         let res = app
             .oneshot(Request::get(format!("/api/homes/{id}")).body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::NOT_FOUND);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[tokio::test]
+    async fn reports_photo_download_progress() {
+        // A photo host with one good photo; any other path is a 404.
+        let photos = Router::new().route("/ok.jpg", get(|| async { "jpg" }));
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let host = format!("http://{}", listener.local_addr().unwrap());
+        tokio::spawn(async move { axum::serve(listener, photos).await.unwrap() });
+
+        let (app, dir) = app_with_images().await;
+        let body = serde_json::json!({
+            "source": "zillow",
+            "sourceId": "7",
+            "images": [{ "url": format!("{host}/ok.jpg") }, { "url": format!("{host}/missing.jpg") }],
+        });
+        let res = app
+            .clone()
+            .oneshot(
+                Request::post("/api/homes")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(body.to_string()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        let body = axum::body::to_bytes(res.into_body(), usize::MAX).await.unwrap();
+        let id = serde_json::from_slice::<serde_json::Value>(&body).unwrap()["id"].as_i64().unwrap();
+
+        let progress = |app: Router| async move {
+            let res = app
+                .oneshot(Request::get(format!("/api/homes/{id}/photos/progress")).body(Body::empty()).unwrap())
+                .await
+                .unwrap();
+            assert_eq!(res.status(), StatusCode::OK);
+            let body = axum::body::to_bytes(res.into_body(), usize::MAX).await.unwrap();
+            serde_json::from_slice::<serde_json::Value>(&body).unwrap()
+        };
+        let mut json = progress(app.clone()).await;
+        for _ in 0..100 {
+            if json["done"] == true {
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+            json = progress(app.clone()).await;
+        }
+        assert_eq!(json, serde_json::json!({ "total": 2, "downloaded": 1, "failed": 1, "done": true }));
+
+        let res = app
+            .oneshot(Request::get("/api/homes/999/photos/progress").body(Body::empty()).unwrap())
             .await
             .unwrap();
         assert_eq!(res.status(), StatusCode::NOT_FOUND);

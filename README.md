@@ -98,6 +98,7 @@ from web pages get 403.
 | GET | `/api/homes/lookup?source=zillow&sourceId=…` | `{ saved, home }` |
 | GET | `/api/homes/{id}` | home + images + attributes |
 | DELETE | `/api/homes/{id}` | |
+| GET | `/api/homes/{id}/photos/progress` | photo download `{ total, downloaded, failed, done }` |
 | PUT | `/api/homes/{id}/attributes` | upsert enrichment attributes |
 
 ## Enrichment
