@@ -3,14 +3,14 @@
 A desktop inventory of homes you're considering. A browser extension adds a
 **Save in Home Safe** button to Zillow listings; clicking it sends the listing
 to the desktop app, which stores it in a local Turso database, downloads the
-photos, and shows everything in a sortable table.
+photos, and shows everything as photo cards or a sortable table.
 
 ```
 Zillow page ──(content script: extract)──▶ extension background
      ──POST http://127.0.0.1:47321/api/homes──▶ Home Safe app
           ├─ Turso DB (homes, images, snapshots, attributes)
           ├─ photo downloader → <data dir>/images/<home id>/
-          └─ GPUI table (live-updates on every save)
+          └─ GPUI cards / table (live-updates on every save)
 ```
 
 ## Layout

@@ -1,9 +1,12 @@
 use std::path::PathBuf;
 
-use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::button::{Button, ButtonGroup, ButtonVariants as _};
+use gpui_kit::component::menu::{ContextMenuExt as _, PopupMenuItem};
 use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::table::{DataTable, TableEvent, TableState};
-use gpui_kit::component::{ActiveTheme as _, Disableable as _, IconName, Sizable as _, h_flex, v_flex};
+use gpui_kit::component::{
+    ActiveTheme as _, Disableable as _, IconName, Selectable as _, Sizable as _, h_flex, v_flex,
+};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::*;
 use home_safe_core::{Home, HomeImage};
@@ -11,10 +14,22 @@ use home_safe_server::StoreEvent;
 
 use crate::backend::Backend;
 use crate::format;
+use crate::homes_cards;
 use crate::homes_table::HomesTable;
+
+#[derive(Clone, Copy, PartialEq, Eq, Default)]
+enum ViewMode {
+    #[default]
+    Cards,
+    Table,
+}
+
+/// Width of the detail panel shown beside the homes.
+const DETAIL_WIDTH: f32 = 380.;
 
 pub struct HomesView {
     backend: Backend,
+    mode: ViewMode,
     table: Entity<TableState<HomesTable>>,
     search: Entity<InputState>,
     selected: Option<Selected>,
@@ -62,6 +77,7 @@ impl HomesView {
 
         let mut this = Self {
             backend,
+            mode: ViewMode::default(),
             table,
             search,
             selected: None,
@@ -222,6 +238,27 @@ impl HomesView {
             )
             .child(div().flex_1())
             .child(
+                ButtonGroup::new("view-mode")
+                    .small()
+                    .outline()
+                    .child(
+                        Button::new("view-cards")
+                            .icon(gpui_kit::assets::IconName::LayoutGrid)
+                            .tooltip("Card view")
+                            .selected(self.mode == ViewMode::Cards),
+                    )
+                    .child(
+                        Button::new("view-table")
+                            .icon(gpui_kit::assets::IconName::Table)
+                            .tooltip("Table view")
+                            .selected(self.mode == ViewMode::Table),
+                    )
+                    .on_click(cx.listener(|this, clicked: &Vec<usize>, _, cx| {
+                        this.mode = if clicked.contains(&1) { ViewMode::Table } else { ViewMode::Cards };
+                        cx.notify();
+                    })),
+            )
+            .child(
                 div().w(px(320.)).child(
                     Input::new(&self.search)
                         .small()
@@ -273,7 +310,7 @@ impl HomesView {
 
         v_flex()
             .id("detail")
-            .w(px(380.))
+            .w(px(DETAIL_WIDTH))
             .h_full()
             .flex_shrink_0()
             .border_l_1()
@@ -374,11 +411,62 @@ impl HomesView {
             })
     }
 
+    fn render_cards(&self, window: &Window, cx: &mut Context<Self>) -> AnyElement {
+        let table = self.table.read(cx).delegate();
+        let selected_id = self.selected.as_ref().map(|s| s.home.id);
+        let homes: Vec<Home> = table.visible().cloned().collect();
+        if homes.is_empty() {
+            return h_flex()
+                .size_full()
+                .justify_center()
+                .text_color(cx.theme().muted_foreground)
+                .child(table.empty_message())
+                .into_any_element();
+        }
+
+        let mut width = window.viewport_size().width - px(2. * homes_cards::PADDING);
+        if self.selected.is_some() {
+            width -= px(DETAIL_WIDTH);
+        }
+        let cards = homes.into_iter().enumerate().map(|(row, home)| {
+            let selected = Some(home.id) == selected_id;
+            let url = home.url.clone();
+            let on_delete = cx.weak_entity();
+            homes_cards::card(row, &home, selected, cx)
+                .min_w_0()
+                .on_click(cx.listener(move |this, event: &ClickEvent, _, cx| {
+                    if event.click_count() >= 2 {
+                        if let Some(url) = &url {
+                            cx.open_url(url);
+                        }
+                        return;
+                    }
+                    this.table.update(cx, |t, cx| t.set_selected_row(row, cx));
+                }))
+                .context_menu(move |menu, _, _| {
+                    let on_delete = on_delete.clone();
+                    let home = home.clone();
+                    menu.item(PopupMenuItem::new("Delete…").icon(IconName::Delete).on_click(
+                        move |_, window, cx| {
+                            on_delete
+                                .update(cx, |this, cx| this.delete_home(home.clone(), window, cx))
+                                .ok();
+                        },
+                    ))
+                })
+        });
+
+        homes_cards::grid(homes_cards::columns(width), cards).into_any_element()
+    }
 }
 
 impl Render for HomesView {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let detail = self.selected.as_ref().map(|s| self.render_detail(s, cx));
+        let content = match self.mode {
+            ViewMode::Cards => self.render_cards(window, cx),
+            ViewMode::Table => DataTable::new(&self.table).stripe(true).into_any_element(),
+        };
         v_flex()
             .size_full()
             .bg(cx.theme().background)
@@ -403,7 +491,7 @@ impl Render for HomesView {
                             .flex_1()
                             .h_full()
                             .min_w_0()
-                            .child(DataTable::new(&self.table).stripe(true)),
+                            .child(content),
                     )
                     .children(detail),
             )

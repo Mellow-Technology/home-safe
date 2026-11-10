@@ -168,6 +168,20 @@ impl HomesTable {
         self.rows.get(row_ix).map(|&i| &self.homes[i])
     }
 
+    /// Homes after filtering and sorting, in display order.
+    pub fn visible(&self) -> impl Iterator<Item = &Home> {
+        self.rows.iter().map(|&i| &self.homes[i])
+    }
+
+    /// Message to show when there are no rows to display.
+    pub fn empty_message(&self) -> &'static str {
+        if self.homes.is_empty() {
+            "No homes yet. Open a listing on Zillow and click “Save in Home Safe”."
+        } else {
+            "No homes match your search."
+        }
+    }
+
     pub fn row_of(&self, home_id: i64) -> Option<usize> {
         self.rows.iter().position(|&i| self.homes[i].id == home_id)
     }
@@ -288,11 +302,7 @@ impl TableDelegate for HomesTable {
         _: &mut Window,
         cx: &mut Context<TableState<Self>>,
     ) -> impl IntoElement {
-        let message = if self.homes.is_empty() {
-            "No homes yet. Open a listing on Zillow and click “Save in Home Safe”."
-        } else {
-            "No homes match your search."
-        };
+        let message = self.empty_message();
         h_flex()
             .size_full()
             .justify_center()
